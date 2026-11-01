@@ -1,8 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'services/preferencies_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/benvinguda_screen.dart';
+import 'screens/login_page.dart';
 
 Future<void> main() async { // Inicialitzem Flutter per poder accedir a les preferències abans d'obrir l'app
 
@@ -165,12 +165,8 @@ class _MyAppState extends State<MyApp> {
             );
           }
 
-          return Benvinguda(
-            temaFosc: temaFosc,
-            midaLletra: midaLletra,
-            ocultarCompletats: ocultarCompletats,
-            guardarAjustos: guardarAjustos,
-          );
+          //Si no tenim dades guardades, mostrem la pantalla de login
+          return const LoginPage();
         },
       ),
     );

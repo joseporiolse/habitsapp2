@@ -6,6 +6,7 @@ import 'estadistiques_screen.dart';
 import 'configuracio_screen.dart';
 import 'editar_habit_screen.dart';
 import '../widgets/targeta_habit.dart';
+import 'login_page.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool temaFosc;
@@ -204,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (context) => EditarHabitScreen(
           nomInicial: habitEditar?.nom ?? '',
-          colorInicial: habitEditar?.color ?? Colors.blue.toARGB32(),
+          colorInicial: habitEditar?.color ?? Colors.blue.toARGB32(), //Convertim el color seleccionat en un enter per poder guardar-lo
           esNou: habitEditar == null,
         ),
       ),
@@ -366,6 +367,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+
+//Tanquem la sessió i tornem a la pantalla de login
+  Future<void> tancarSessio() async {
+    //Tornem i eliminem les pantalles anteriors
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginPage(),
+      ),
+          (route) => false,
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     // Construïm la pantalla principal
@@ -411,6 +426,11 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: 'Restablir aplicació',
             onPressed: reiniciarApp,
           ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Tancar sessió',
+            onPressed: tancarSessio,
+          ),
         ],
       ),
 
@@ -449,14 +469,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 20),
 
-          // Mostrem els hàbits i permetem completar-los, editar-los o eliminar-los.
+          //Mostrem els hàbits i permetem completar-los, editar-los o eliminar-los.
           Expanded(
-            child: ListView.builder(
+            child: habits.isEmpty
+                ? const Center(
+              child: Text('Encara no tens cap hàbit creat'),
+            )
+                : ListView.builder(
               itemCount: habitsVisibles.length,
               itemBuilder: (context, index) {
                 final habit = habitsVisibles[index];
 
-                return HabitTile(
+                return TargetaHabit(
                   nom: habit.nom,
                   completat: estaCompletatAvui(habit),
                   color: Color(habit.color),
@@ -478,6 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
+
         ],
       ),
     );

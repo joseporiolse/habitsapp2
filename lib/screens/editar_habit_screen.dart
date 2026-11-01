@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../widgets/campo_texto_app.dart';
+import '../widgets/boton_principal.dart';
 
 //Dades que retornem a la pantalla principal quan guardem un hàbit
 class ResultatEdicioHabit {
@@ -91,12 +93,10 @@ class _EditarHabitScreenState extends State<EditarHabitScreen> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: controladorNom,
-              decoration: const InputDecoration(
-                labelText: 'Nom de l\'hàbit',
-                border: OutlineInputBorder(),
-              ),
+            // Utilitzem el component reutilitzable per introduir el nom
+            CampoTextoApp(
+              etiqueta: 'Nom de l\'hàbit',
+              controlador: controladorNom,
             ),
             const SizedBox(height: 30),
             const Text(
@@ -139,9 +139,10 @@ class _EditarHabitScreenState extends State<EditarHabitScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Cancel·lar'),
                 ),
-                ElevatedButton(
-                  onPressed: guardarHabit,
-                  child: const Text('Guardar'),
+                // Utilitzem el botó reutilitzable per guardar l'hàbit
+                BotonPrincipal(
+                  texto: 'Guardar',
+                  accion: guardarHabit,
                 ),
               ],
             ),

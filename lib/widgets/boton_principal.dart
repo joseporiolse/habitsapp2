@@ -17,9 +17,11 @@ class BotonPrincipal extends StatelessWidget {
       child: ElevatedButton( //fiquem el boto
         onPressed: accion,
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.all(16), //El boto tindra espai de 16 pixels per dins
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.all(16),
           textStyle: const TextStyle(
-            fontSize: 18, //tamany de text
+            fontSize: 18,
           ),
         ),
         child: Text(texto),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/habitos.dart';
 import '../services/preferencies_service.dart';
+import '../widgets/dato_estadistica.dart';
 
 class EstadistiquesScreen extends StatefulWidget {
   final List<Habit> habits;
@@ -208,9 +209,23 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
                   children: [
                     const SizedBox(height: 8),
 
-                    Text('Ratxa actual: $ratxa dies'),
 
-                    Text('Total de dies completats: $dies'),
+                  //Mostrem ratxa actual
+                    DatoEstadistica(
+                      etiqueta: 'Ratxa actual',
+                      valor: '$ratxa dies',
+                      icono: Icons.local_fire_department,
+                      color: Colors.orange,
+                    ),
+
+                    //Mostrem els dies completats
+                    DatoEstadistica(
+                      etiqueta: 'Total de dies completats',
+                      valor: '$dies',
+                      icono: Icons.calendar_today,
+                      color: Colors.green,
+                    ),
+
                   ],
                 ),
               ),

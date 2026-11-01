@@ -27,10 +27,6 @@ class TargetaHabit extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: color,
-        child: Icon(
-          icono,
-          color: Colors.white,
-        ),
       ),
 
       title: Text(nom),

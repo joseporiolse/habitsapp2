@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/preferencies_service.dart';
 import 'home_screen.dart';
+import '../widgets/campo_texto_app.dart';
+import '../widgets/boton_principal.dart';
 
 class Benvinguda extends StatefulWidget { //Rebem les preferencies actuals per a mantenir la configuració de l'aplicació
   final bool temaFosc;
@@ -82,26 +84,23 @@ class _BenvingudaState extends State<Benvinguda> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                TextField(
-                  controller: nomController, //Camps per introduir el nom de l'usuari i el seu objectiu
-                  decoration: const InputDecoration(
-                    labelText: 'Nom',
-                    border: OutlineInputBorder(),
-                  ),
+                // Camp reutilitzable per introduir el nom
+                CampoTextoApp(
+                  etiqueta: 'Nom',
+                  controlador: nomController,
                 ),
                 const SizedBox(height: 20),
-                TextField(
-                  controller: objectiuController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Objectiu diari',
-                    border: OutlineInputBorder(),
-                  ),
+                //Introduir l'objectiu diari
+                CampoTextoApp(
+                  etiqueta: 'Objectiu diari',
+                  controlador: objectiuController,
+                  tipusTeclat: TextInputType.number,
                 ),
                 const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: guardarDades, //Botó que comprova i guarda les dades
-                  child: const Text('Continuar'),
+                //Botó que comprova i guarda les dades
+                BotonPrincipal(
+                  texto: 'Continuar',
+                  accion: guardarDades,
                 ),
               ],
             ),
