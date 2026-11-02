@@ -351,18 +351,36 @@ class _AdministracionPageState extends State<AdministracionPage> {
     }
   }
 
-  //Creem o editem un habit de qualsevol usuari
+  //Creem o editem un habit i seleccionem el seu usuari
   Future<void> formulariHabit([
     Map<String, Object?>? habit,
   ]) async {
+    //Actualitzem la llista d'usuaris abans de mostrar el formulari
+    if (!await UsuariosService.esAdministrador(widget.idAdministrador)) {
+      mostrarMissatge('Acces denegat');
+      return;
+    }
+
+    final usuarisDisponibles = await UsuariosService.obtenirTotsUsuaris();
+    if (!mounted) return;
+
+    if (usuarisDisponibles.isEmpty) {
+      mostrarMissatge('Primer has de crear un usuari');
+      return;
+    }
+
     final nom = TextEditingController(
       text: habit?['nombre']?.toString() ?? '',
     );
-    final idUsuari = TextEditingController(
-      text: habit?['id_usuario']?.toString() ?? '',
-    );
 
-    //Color inicial: mantenim el color de l'hàbit existent.
+    //Seleccionem per defecte el propietari actual de l'habit
+    int? idUsuariSeleccionat = habit?['id_usuario'] as int?;
+    if (!usuarisDisponibles.any(
+          (usuari) => usuari['id_usuario'] == idUsuariSeleccionat,
+    )) {
+      idUsuariSeleccionat = null;
+    }
+
     //Mateixos tres colors que a EditarHabitScreen
     final colorsDisponibles = <String, int>{
       'Blau': Colors.blue.toARGB32(),
@@ -376,104 +394,137 @@ class _AdministracionPageState extends State<AdministracionPage> {
 
     bool guardat = false;
 
-    await showDialog(
+    await showDialog<void>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, actualitzarDialog) => AlertDialog(
-            title: Text(
-              habit == null ? 'Crear hàbit' : 'Editar hàbit',
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nom,
-                  decoration: const InputDecoration(
-                    labelText: 'Nom de l\'hàbit',
-                  ),
-                ),
-                TextField(
-                  controller: idUsuari,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'ID de l\'usuari',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                //Seleccionem el color sense escriure números.
-                DropdownButtonFormField<int>(
-                  value: colorSeleccionat,
-                  decoration: const InputDecoration(labelText: 'Color de l\'hàbit'),
-                  items: colorsDisponibles.entries.map((opcio) {
-                    return DropdownMenuItem<int>(
-                      value: opcio.value,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle, color: Color(opcio.value)),
-                          const SizedBox(width: 8),
-                          Text(opcio.key),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (nouColor) {
-                    if (nouColor != null) {
-                      actualitzarDialog(() { colorSeleccionat = nouColor; });
-                    }
-                  },
-                ),
-                if (habit != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      'Última vegada completat: ${obtenirDataHoraHabit(habit)}',
+            title: Text(habit == null ? 'Crear hàbit' : 'Editar hàbit'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nom,
+                    decoration: const InputDecoration(
+                      labelText: 'Nom de l\'hàbit',
                     ),
                   ),
-              ],
+                  const SizedBox(height: 12),
+
+                  //Mostrem tots els usuaris registrats en un desplegable
+                  DropdownButtonFormField<int>(
+                    value: idUsuariSeleccionat,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Usuari propietari',
+                    ),
+                    items: usuarisDisponibles.map((usuari) {
+                      final id = usuari['id_usuario'] as int;
+                      final nomUsuari = usuari['usuario'].toString();
+                      return DropdownMenuItem<int>(
+                        value: id,
+                        child: Text('$nomUsuari (ID: $id)'),
+                      );
+                    }).toList(),
+                    onChanged: (id) {
+                      actualitzarDialog(() {
+                        idUsuariSeleccionat = id;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  //Seleccionem el color de l'habit
+                  DropdownButtonFormField<int>(
+                    value: colorSeleccionat,
+                    decoration: const InputDecoration(
+                      labelText: 'Color de l\'hàbit',
+                    ),
+                    items: colorsDisponibles.entries.map((opcio) {
+                      return DropdownMenuItem<int>(
+                        value: opcio.value,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.circle, color: Color(opcio.value)),
+                            const SizedBox(width: 8),
+                            Text(opcio.key),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (nouColor) {
+                      if (nouColor != null) {
+                        actualitzarDialog(() {
+                          colorSeleccionat = nouColor;
+                        });
+                      }
+                    },
+                  ),
+                  if (habit != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        'Última vegada completat: ${obtenirDataHoraHabit(habit)}',
+                      ),
+                    ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Cancel·lar'),
               ),
               ElevatedButton(
                 onPressed: () async {
-                  int? id = int.tryParse(idUsuari.text);
-                  final colorHabit = colorSeleccionat;
-
+                  final id = idUsuariSeleccionat;
                   if (nom.text.trim().isEmpty || id == null) {
-                    mostrarMissatge('Revisa els camps');
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(content: Text('Revisa els camps')),
+                    );
                     return;
                   }
 
                   try {
                     if (!await UsuariosService.esAdministrador(
                       widget.idAdministrador,
-                    )) return;
+                    )) {
+                      throw Exception('Acces denegat');
+                    }
 
                     if (habit == null) {
-                      //Creem un habit per a l'usuari seleccionat
+                      //Creem l'habit per a l'usuari seleccionat
                       await HabitosService.crearHabit(
                         id,
                         nom.text.trim(),
-                        colorHabit,
+                        colorSeleccionat,
                       );
                     } else {
-                      //Modifiquem l'habit existent
-                      await HabitosService.editarHabit(
-                        habit['id_habit'] as int,
-                        habit['id_usuario'] as int,
-                        nom.text.trim(),
-                        colorHabit,
+                      //Actualitzem el nom, el color i el propietari alhora
+                      final db = await DatabaseService.obtenirDatabase();
+                      final files = await db.update(
+                        'habitos',
+                        {
+                          'nombre': nom.text.trim(),
+                          'color': colorSeleccionat,
+                          'id_usuario': id,
+                        },
+                        where: 'id_habit = ?',
+                        whereArgs: [habit['id_habit'] as int],
                       );
+                      if (files == 0) throw Exception('Habit no trobat');
                     }
 
                     guardat = true;
-                    if (context.mounted) Navigator.pop(context);
-                  } catch (e) {
-                    mostrarMissatge('Error en guardar l\'hàbit');
+                    if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  } catch (error) {
+                    if (dialogContext.mounted) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(content: Text('Error en guardar l\'hàbit')),
+                      );
+                    }
                   }
                 },
                 child: const Text('Guardar'),
@@ -486,9 +537,8 @@ class _AdministracionPageState extends State<AdministracionPage> {
 
     await Future<void>.delayed(const Duration(milliseconds: 350));
     nom.dispose();
-    idUsuari.dispose();
 
-    if (guardat) {
+    if (guardat && mounted) {
       await carregarDades();
       mostrarMissatge('Hàbit guardat correctament');
     }
