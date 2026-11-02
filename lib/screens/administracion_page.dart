@@ -160,14 +160,16 @@ class _AdministracionPageState extends State<AdministracionPage> {
                         labelText: 'Correu electronic',
                       ),
                     ),
-                    if (usuari == null)
-                      TextField(
-                        controller: contrasena,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Contrasenya',
-                        ),
+                    //En crear es obligatoria; en editar es opcional.
+                    TextField(
+                      controller: contrasena,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: usuari == null
+                            ? 'Contrasenya'
+                            : 'Nova contrasenya (opcional)',
                       ),
+                    ),
                     TextField(
                       controller: objectiu,
                       keyboardType: TextInputType.number,
@@ -284,6 +286,20 @@ class _AdministracionPageState extends State<AdministracionPage> {
         );
         await UsuariosService.editarObjetivo(id, dades['objetivo'] as int);
         await canviarRol(id, rol);
+        //Nomes canviem la contrasenya si se n'ha escrit una de nova.
+        final novaContrasena = dades['contrasena'] as String;
+        if (novaContrasena.isNotEmpty) {
+          if (!await UsuariosService.esAdministrador(widget.idAdministrador)) {
+            throw Exception('Acces denegat');
+          }
+          final db = await DatabaseService.obtenirDatabase();
+          await db.update(
+            'usuarios',
+            {'contrasena': novaContrasena},
+            where: 'id_usuario = ?',
+            whereArgs: [id],
+          );
+        }
       }
 
       await carregarDades();
@@ -351,20 +367,11 @@ class _AdministracionPageState extends State<AdministracionPage> {
     }
   }
 
-  //Creem o editem un habit i seleccionem el seu usuari
+  //Creem o editem un habit de qualsevol usuari
   Future<void> formulariHabit([
     Map<String, Object?>? habit,
   ]) async {
-    //Actualitzem la llista d'usuaris abans de mostrar el formulari
-    if (!await UsuariosService.esAdministrador(widget.idAdministrador)) {
-      mostrarMissatge('Acces denegat');
-      return;
-    }
-
-    final usuarisDisponibles = await UsuariosService.obtenirTotsUsuaris();
-    if (!mounted) return;
-
-    if (usuarisDisponibles.isEmpty) {
+    if (usuaris.isEmpty) {
       mostrarMissatge('Primer has de crear un usuari');
       return;
     }
@@ -373,15 +380,13 @@ class _AdministracionPageState extends State<AdministracionPage> {
       text: habit?['nombre']?.toString() ?? '',
     );
 
-    //Seleccionem per defecte el propietari actual de l'habit
+    //Seleccionem el propietari a partir dels usuaris de SQLite.
     int? idUsuariSeleccionat = habit?['id_usuario'] as int?;
-    if (!usuarisDisponibles.any(
-          (usuari) => usuari['id_usuario'] == idUsuariSeleccionat,
-    )) {
-      idUsuariSeleccionat = null;
+    final idsDisponibles = usuaris.map((u) => u['id_usuario'] as int).toList();
+    if (!idsDisponibles.contains(idUsuariSeleccionat)) {
+      idUsuariSeleccionat = idsDisponibles.first;
     }
 
-    //Mateixos tres colors que a EditarHabitScreen
     final colorsDisponibles = <String, int>{
       'Blau': Colors.blue.toARGB32(),
       'Verd': Colors.green.toARGB32(),
@@ -411,36 +416,29 @@ class _AdministracionPageState extends State<AdministracionPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  //Mostrem tots els usuaris registrats en un desplegable
                   DropdownButtonFormField<int>(
                     value: idUsuariSeleccionat,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Usuari propietari',
-                    ),
-                    items: usuarisDisponibles.map((usuari) {
+                    decoration: const InputDecoration(labelText: 'Usuari'),
+                    items: usuaris.map((usuari) {
                       final id = usuari['id_usuario'] as int;
-                      final nomUsuari = usuari['usuario'].toString();
+                      final nomUsuari = usuari['usuario']?.toString() ?? '';
                       return DropdownMenuItem<int>(
                         value: id,
-                        child: Text('$nomUsuari (ID: $id)'),
+                        child: Text('$nomUsuari (ID: $id)',
+                            overflow: TextOverflow.ellipsis),
                       );
                     }).toList(),
-                    onChanged: (id) {
+                    onChanged: (valor) {
                       actualitzarDialog(() {
-                        idUsuariSeleccionat = id;
+                        idUsuariSeleccionat = valor;
                       });
                     },
                   ),
                   const SizedBox(height: 12),
-
-                  //Seleccionem el color de l'habit
                   DropdownButtonFormField<int>(
                     value: colorSeleccionat,
-                    decoration: const InputDecoration(
-                      labelText: 'Color de l\'hàbit',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Color de l\'hàbit'),
                     items: colorsDisponibles.entries.map((opcio) {
                       return DropdownMenuItem<int>(
                         value: opcio.value,
@@ -454,10 +452,10 @@ class _AdministracionPageState extends State<AdministracionPage> {
                         ),
                       );
                     }).toList(),
-                    onChanged: (nouColor) {
-                      if (nouColor != null) {
+                    onChanged: (valor) {
+                      if (valor != null) {
                         actualitzarDialog(() {
-                          colorSeleccionat = nouColor;
+                          colorSeleccionat = valor;
                         });
                       }
                     },
@@ -481,50 +479,36 @@ class _AdministracionPageState extends State<AdministracionPage> {
                 onPressed: () async {
                   final id = idUsuariSeleccionat;
                   if (nom.text.trim().isEmpty || id == null) {
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      const SnackBar(content: Text('Revisa els camps')),
-                    );
+                    mostrarMissatge('Revisa els camps');
                     return;
                   }
-
                   try {
-                    if (!await UsuariosService.esAdministrador(
-                      widget.idAdministrador,
-                    )) {
-                      throw Exception('Acces denegat');
+                    if (!await UsuariosService.esAdministrador(widget.idAdministrador)) {
+                      mostrarMissatge('Acces denegat');
+                      return;
                     }
-
                     if (habit == null) {
-                      //Creem l'habit per a l'usuari seleccionat
                       await HabitosService.crearHabit(
-                        id,
-                        nom.text.trim(),
-                        colorSeleccionat,
+                        id, nom.text.trim(), colorSeleccionat,
                       );
                     } else {
-                      //Actualitzem el nom, el color i el propietari alhora
+                      //Actualitzem el nom, el color i el propietari.
                       final db = await DatabaseService.obtenirDatabase();
-                      final files = await db.update(
+                      await db.update(
                         'habitos',
                         {
+                          'id_usuario': id,
                           'nombre': nom.text.trim(),
                           'color': colorSeleccionat,
-                          'id_usuario': id,
                         },
                         where: 'id_habit = ?',
                         whereArgs: [habit['id_habit'] as int],
                       );
-                      if (files == 0) throw Exception('Habit no trobat');
                     }
-
                     guardat = true;
                     if (dialogContext.mounted) Navigator.pop(dialogContext);
-                  } catch (error) {
-                    if (dialogContext.mounted) {
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(content: Text('Error en guardar l\'hàbit')),
-                      );
-                    }
+                  } catch (e) {
+                    mostrarMissatge('Error en guardar l\'hàbit');
                   }
                 },
                 child: const Text('Guardar'),
@@ -537,10 +521,40 @@ class _AdministracionPageState extends State<AdministracionPage> {
 
     await Future<void>.delayed(const Duration(milliseconds: 350));
     nom.dispose();
-
     if (guardat && mounted) {
       await carregarDades();
       mostrarMissatge('Hàbit guardat correctament');
+    }
+  }
+
+  //Marquem o desmarquem habits de qualsevol usuari.
+  Future<void> canviarEstatHabitAdmin(Map<String, Object?> habit) async {
+    try {
+      if (!await UsuariosService.esAdministrador(widget.idAdministrador)) {
+        mostrarMissatge('Acces denegat');
+        return;
+      }
+      final idHabit = habit['id_habit'] as int;
+      final idUsuari = habit['id_usuario'] as int;
+      final avui = DateTime.now();
+      final dataAvui = '${avui.year}-${avui.month.toString().padLeft(2, '0')}-${avui.day.toString().padLeft(2, '0')}';
+      final dates = <String>[];
+      final valor = habit['fechas_completadas'];
+      if (valor is String && valor.isNotEmpty) {
+        for (final data in jsonDecode(valor) as List<dynamic>) {
+          dates.add(data.toString().split('T').first);
+        }
+      }
+      if (dates.contains(dataAvui)) {
+        await HabitosService.desmarcarHabit(idHabit, idUsuari);
+      } else {
+        await HabitosService.completarHabit(idHabit, idUsuari);
+      }
+      if (!mounted) return;
+      await carregarDades();
+      mostrarMissatge('Estat de l\'hàbit actualitzat');
+    } catch (e) {
+      mostrarMissatge('Error en actualitzar l\'hàbit');
     }
   }
 
@@ -792,6 +806,11 @@ class _AdministracionPageState extends State<AdministracionPage> {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              IconButton(
+                icon: const Icon(Icons.check_circle_outline),
+                tooltip: 'Completar o desmarcar avui',
+                onPressed: () => canviarEstatHabitAdmin(habit),
+              ),
               IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () => formulariHabit(habit),
