@@ -1,119 +1,112 @@
-import 'package:flutter/material.dart';
-import '../services/preferencies_service.dart';
-import 'home_screen.dart';
-import '../widgets/campo_texto_app.dart';
-import '../widgets/boton_principal.dart';
 
-class Benvinguda extends StatefulWidget { //Rebem les preferencies actuals per a mantenir la configuració de l'aplicació
+import 'package:flutter/material.dart';
+import 'login_page.dart';
+import 'registro_page.dart';
+
+//Pantalla de benvinguda de l'aplicacio
+class Benvinguda extends StatelessWidget {
+
+  //Rebem les preferencies visuals de l'aplicacio
   final bool temaFosc;
   final double midaLletra;
   final bool ocultarCompletats;
-  final Future<void> Function(bool, double, bool)? guardarAjustos;
+
+  //Funcio que rebem de main.dart per guardar els ajustos
+  final Future<void> Function(bool, double, bool) guardarAjustos;
 
   const Benvinguda({
     super.key,
     this.temaFosc = false,
-    this.midaLletra = 1.0,
+    this.midaLletra = 1,
     this.ocultarCompletats = false,
-    this.guardarAjustos,
+    required this.guardarAjustos,
   });
 
-  @override
-  State<Benvinguda> createState() => _BenvingudaState();
-}
-
-class _BenvingudaState extends State<Benvinguda> {
-  //Controladors per obtenir el text que introdueix l'usuari
-  final TextEditingController nomController = TextEditingController();
-  final TextEditingController objectiuController = TextEditingController();
-
-  final PreferenciesService preferencies = PreferenciesService();
-
-  Future<void> guardarDades() async {
-    final String nom = nomController.text.trim();
-    final int? objectiu = int.tryParse(objectiuController.text.trim());
-
-    if (nom.isEmpty || objectiu == null || objectiu <= 0) { //nom no estigui buit i que l'objectiu sigui un número positiu
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Introdueix un nom i un número vàlids'),
-        ),
-      );
-      return;
-    }
-
-    //Guardem les dades per a no introduirles cada vegada
-    await preferencies.guardarNom(nom);
-    await preferencies.guardarObjectiu(objectiu);
-
-    if (!mounted) return;
-
-    Navigator.pushReplacement( //Obrim la pantalla principal amb les dades introduïdes i substituïm la benvinguda
+  //Obrim la pantalla per iniciar sessio
+  void obrirLogin(BuildContext context) {
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => HomeScreen(
-          nomInicial: nom,
-          objectiuInicial: objectiu,
-          temaFosc: widget.temaFosc,
-          midaLletra: widget.midaLletra,
-          ocultarCompletats: widget.ocultarCompletats,
-          guardarAjustos: widget.guardarAjustos,
+        builder: (context) => LoginPage(
+          guardarAjustos: guardarAjustos,
         ),
+      ),
+    );
+  }
+
+  //Obrim la pantalla per registrar un usuari nou
+  void obrirRegistre(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RegistroPage(),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold( //Pantalla de benvinguda amb una barra superior i el contingut principal
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Habit App'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: SingleChildScrollView( //Desplacem el contingut si no hi cap tot
+
+      //Mostrem la pantalla de benvinguda
+      body: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+
+                //Titol principal de l'aplicacio
                 const Text(
                   'Benvingut a Habit App, on els teus hàbits sumen punts',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 30),
-                // Camp reutilitzable per introduir el nom
-                CampoTextoApp(
-                  etiqueta: 'Nom',
-                  controlador: nomController,
+
+                //Expliquem breument l'aplicacio
+                const Text(
+                  'Organitza els teus hàbits, completa els teus objectius '
+                      'diaris i consulta el teu progrés.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                  ),
                 ),
-                const SizedBox(height: 20),
-                //Introduir l'objectiu diari
-                CampoTextoApp(
-                  etiqueta: 'Objectiu diari',
-                  controlador: objectiuController,
-                  tipusTeclat: TextInputType.number,
-                ),
+
                 const SizedBox(height: 30),
-                //Botó que comprova i guarda les dades
-                BotonPrincipal(
-                  texto: 'Continuar',
-                  accion: guardarDades,
+
+                //Boto per iniciar sessio
+                ElevatedButton(
+                  onPressed: () {
+                    obrirLogin(context);
+                  },
+                  child: const Text('Iniciar sessió'),
                 ),
+
+                const SizedBox(height: 10),
+
+                //Boto per crear un compte nou
+                ElevatedButton(
+                  onPressed: () {
+                    obrirRegistre(context);
+                  },
+                  child: const Text('Crear un compte'),
+                ),
+
               ],
             ),
           ),
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() { //Lliberem els controladors quan es tanca aquesta pantalla
-    nomController.dispose();
-    objectiuController.dispose();
-    super.dispose();
   }
 }

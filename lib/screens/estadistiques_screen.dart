@@ -1,13 +1,16 @@
+
 import 'package:flutter/material.dart';
 import '../models/habitos.dart';
 import '../services/preferencies_service.dart';
 import '../widgets/dato_estadistica.dart';
 
 class EstadistiquesScreen extends StatefulWidget {
+  final int idUsuari;
   final List<Habit> habits;
 
   const EstadistiquesScreen({
     super.key,
+    required this.idUsuari,
     required this.habits,
   });
 
@@ -17,25 +20,31 @@ class EstadistiquesScreen extends StatefulWidget {
 }
 
 class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
+
   final PreferenciesService preferencies = PreferenciesService();
 
-  // Guardem el nombre d'obertures, l'última data i l'estat de càrrega
+  //Guardem les apertures, l'última entrada i l'estat de càrrega
   int apertures = 0;
   DateTime? ultimaObertura;
   bool carregant = true;
 
-  // Carreguem les estadístiques quan s'inicia la pantalla
+  //Carreguem les estadístiques quan s'obre la pantalla
   @override
   void initState() {
     super.initState();
     carregarEstadistiques();
   }
 
+  //Recuperem les estadístiques de l'usuari actual
   Future<void> carregarEstadistiques() async {
-    // Recuperem les estadístiques guardades
 
-    final totalApertures = await preferencies.obtenirApertures();
-    final ultimaData = await preferencies.obtenirUltimaObertura();
+    //Obtenim les apertures d'aquest usuari
+    final totalApertures =
+    await preferencies.obtenirApertures(widget.idUsuari);
+
+    //Obtenim la seva última entrada
+    final ultimaData =
+    await preferencies.obtenirUltimaObertura(widget.idUsuari);
 
     if (!mounted) return;
 
@@ -46,9 +55,8 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
     });
   }
 
+  //Convertim una data guardada en un objecte DateTime
   DateTime? convertirData(String data) {
-    // Convertim una data guardada en un objecte DateTime
-
     final parts = data.split('-');
 
     if (parts.length != 3) return null;
@@ -63,7 +71,7 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
 
     final resultat = DateTime(any, mes, dia);
 
-    // Comprovem que la data sigui vàlida
+    //Comprovem que la data sigui vàlida
     if (resultat.year != any ||
         resultat.month != mes ||
         resultat.day != dia) {
@@ -73,20 +81,18 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
     return resultat;
   }
 
+  //Convertim una data al format dels hàbits
   String formatData(DateTime data) {
-    // Convertim una data al format utilitzat pels hàbits
-
     return '${data.year}-${data.month}-${data.day}';
   }
 
+  //Calculem el total de dies diferents completats
   int calcularDiesCompletats(Habit habit) {
-    // Comptem els dies diferents en què s'ha completat l'hàbit
-
     return habit.datesCompletades.toSet().length;
   }
 
+  //Calculem la ratxa de dies consecutius
   int calcularRatxaActual(Habit habit) {
-    // Calculem els dies consecutius completats
 
     final dates = habit.datesCompletades.toSet();
 
@@ -95,17 +101,17 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
 
     DateTime dataActual = avui;
 
-    // Si avui encara no s'ha completat, comprovem ahir
+    //Si avui no està completat, comencem per ahir
     if (!dates.contains(formatData(avui))) {
       dataActual = avui.subtract(const Duration(days: 1));
     }
 
     int ratxa = 0;
 
+    //Comptem els dies consecutius completats
     while (dates.contains(formatData(dataActual))) {
       ratxa++;
 
-      // Retrocedim un dia per continuar comprovant
       dataActual = DateTime(
         dataActual.year,
         dataActual.month,
@@ -116,8 +122,8 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
     return ratxa;
   }
 
+  //Mostrem la data i hora de l'última entrada
   String formatDataHora(DateTime? data) {
-    // Mostrem la data i hora de l'última obertura
 
     if (data == null) {
       return 'Encara no hi ha dades';
@@ -135,7 +141,8 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Mostrem les estadístiques generals i les de cada hàbit
+
+    //Mostrem les estadístiques generals i les de cada hàbit
     return Scaffold(
       appBar: AppBar(
         title: const Text('Estadístiques'),
@@ -148,6 +155,7 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
           : ListView(
         padding: const EdgeInsets.all(20),
         children: [
+
           const Text(
             'Estadístiques generals',
             style: TextStyle(
@@ -158,14 +166,18 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
 
           const SizedBox(height: 15),
 
+          //Mostrem les apertures de l'usuari actual
           Card(
             child: ListTile(
               leading: const Icon(Icons.login),
-              title: const Text('Vegades que has obert l\'app'),
+              title: const Text(
+                'Vegades que has obert l\'app',
+              ),
               trailing: Text('$apertures'),
             ),
           ),
 
+          //Mostrem l'última entrada de l'usuari
           Card(
             child: ListTile(
               leading: const Icon(Icons.access_time),
@@ -188,11 +200,13 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
 
           const SizedBox(height: 15),
 
+          //Missatge quan no hi ha hàbits
           if (widget.habits.isEmpty)
             const Text('Encara no tens hàbits creats.'),
 
-          // Creem una targeta per cada hàbit amb la ratxa i els dies completats
+          //Mostrem una targeta per cada hàbit
           ...widget.habits.map((habit) {
+
             final ratxa = calcularRatxaActual(habit);
             final dies = calcularDiesCompletats(habit);
 
@@ -207,10 +221,10 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
                     const SizedBox(height: 8),
 
-
-                  //Mostrem ratxa actual
+                    //Mostrem la ratxa actual
                     DatoEstadistica(
                       etiqueta: 'Ratxa actual',
                       valor: '$ratxa dies',
@@ -225,7 +239,6 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
                       icono: Icons.calendar_today,
                       color: Colors.green,
                     ),
-
                   ],
                 ),
               ),

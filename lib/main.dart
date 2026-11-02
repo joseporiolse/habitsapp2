@@ -1,32 +1,29 @@
+
 import 'package:flutter/material.dart';
 import 'services/preferencies_service.dart';
-import 'screens/home_screen.dart';
-import 'screens/benvinguda_screen.dart';
+import 'services/habitos_service.dart';
 import 'screens/login_page.dart';
+import 'services/database_service.dart';
 
-Future<void> main() async { // Inicialitzem Flutter per poder accedir a les preferències abans d'obrir l'app
-
+Future<void> main() async {
+  //Inicialitzem Flutter abans de carregar les dades
   WidgetsFlutterBinding.ensureInitialized();
 
-  final preferencies = PreferenciesService();  // Registrem cada vegada que s'obre l'aplicació
+  //Obrim la base de dades SQLite
+  final db = await DatabaseService.obtenirDatabase();
 
-  await preferencies.registrarObertura();
+  //Comprovem les taules que tenim creades
+  final taules = await db.rawQuery(
+    "SELECT name FROM sqlite_master WHERE type = 'table'",
+  );
+
+  debugPrint(taules.toString());
+
+  //Sincronitzem les estadistiques de tots els habits
+  //També recuperem les estadistiques dels habits antics
+  await HabitosService.sincronitzarEstadistiques();
 
   runApp(const MyApp());
-}
-
-// Comprovem si l'usuari ja ha introduït el nom i un objectiu vàlid
-
-Future<bool> teDadesGuardades() async {
-  final preferencies = PreferenciesService();
-
-  final nom = await preferencies.obtenirNom();
-  final objectiu = await preferencies.obtenirObjectiu();
-
-  return nom != null &&
-      nom.isNotEmpty &&
-      objectiu != null &&
-      objectiu > 0;
 }
 
 class MyApp extends StatefulWidget {
@@ -39,59 +36,70 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final PreferenciesService preferencies = PreferenciesService();
 
+  //Guardem la configuracio visual de l'aplicacio
   bool temaFosc = false;
-  double midaLletra = 1.0;
+  double midaLletra = 1;
   bool ocultarCompletats = false;
-
-  late Future<bool> dadesGuardades;
+  bool carregant = true;
 
   @override
   void initState() {
     super.initState();
 
-    // Comprovem les dades inicials una sola vegada i carreguem els ajustos
-
-    dadesGuardades = teDadesGuardades();
+    //Carreguem els ajustos quan s'inicia l'aplicacio
     carregarAjustos();
   }
 
-  Future<void> carregarAjustos() async { // Recuperem la configuració que l'usuari havia guardat
+  //Recuperem la configuracio guardada
+  Future<void> carregarAjustos() async {
+    try {
+      final temaGuardat =
+      await preferencies.obtenirTemaFosc();
 
-    final temaGuardat = await preferencies.obtenirTemaFosc();
-    final midaGuardada = await preferencies.obtenirMidaLletra();
-    final ocultarGuardat =
-    await preferencies.obtenirOcultarCompletats();
+      final midaGuardada =
+      await preferencies.obtenirMidaLletra();
 
-    if (!mounted) return;
+      final ocultarGuardat =
+      await preferencies.obtenirOcultarCompletats();
 
-    setState(() {
-      temaFosc = temaGuardat;
-      midaLletra = midaGuardada;
-      ocultarCompletats = ocultarGuardat;
-    });
+      if (!mounted) return;
+
+      setState(() {
+        temaFosc = temaGuardat;
+        midaLletra = midaGuardada;
+        ocultarCompletats = ocultarGuardat;
+        carregant = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        carregant = false;
+      });
+
+      debugPrint('Error en carregar els ajustos: $error');
+    }
   }
 
+  //Guardem els canvis de configuracio
   Future<void> guardarAjustos(
       bool nouTema,
       double novaMida,
       bool nouOcultar,
       ) async {
-
-    // Actualitzem la pantalla amb els nous ajustos
+    //Guardem els ajustos a SharedPreferences
+    await preferencies.guardarTemaFosc(nouTema);
+    await preferencies.guardarMidaLletra(novaMida);
+    await preferencies.guardarOcultarCompletats(nouOcultar);
 
     if (!mounted) return;
 
+    //Actualitzem la pantalla
     setState(() {
       temaFosc = nouTema;
       midaLletra = novaMida;
       ocultarCompletats = nouOcultar;
     });
-
-    // Guardem els ajustos perquè es mantinguin en tornar a obrir l'app
-
-    await preferencies.guardarTemaFosc(nouTema);
-    await preferencies.guardarMidaLletra(novaMida);
-    await preferencies.guardarOcultarCompletats(nouOcultar);
   }
 
   @override
@@ -100,10 +108,12 @@ class _MyAppState extends State<MyApp> {
       title: 'Habit App',
       debugShowCheckedModeBanner: false,
 
-      // Apliquem el tema clar o fosc segons la configuració
+      //Apliquem el tema clar o fosc
+      themeMode: temaFosc
+          ? ThemeMode.dark
+          : ThemeMode.light,
 
-      themeMode: temaFosc ? ThemeMode.dark : ThemeMode.light,
-
+      //Configuracio del tema clar
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,
@@ -113,6 +123,7 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
 
+      //Configuracio del tema fosc
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,
@@ -123,51 +134,27 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
 
-      // Ajustem la mida dels textos de tota l'aplicació
-
+      //Ajustem la mida dels textos de tota l'aplicacio
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(midaLletra),
           ),
-          child: child!,
+          child: child ?? const SizedBox(),
         );
       },
 
-      // Decidim si cal mostrar la benvinguda o entrar directament a la principal
+      //Esperem que es carreguin les preferencies
+      home: carregant
+          ? const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      )
 
-      home: FutureBuilder<bool>(
-        future: dadesGuardades,
-        builder: (context, resultat) {
-          if (resultat.connectionState ==
-              ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-
-          if (resultat.hasError) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Error en carregar les dades'),
-              ),
-            );
-          }
-
-          if (resultat.data == true) {
-            return HomeScreen(
-              temaFosc: temaFosc,
-              midaLletra: midaLletra,
-              ocultarCompletats: ocultarCompletats,
-              guardarAjustos: guardarAjustos,
-            );
-          }
-
-          //Si no tenim dades guardades, mostrem la pantalla de login
-          return const LoginPage();
-        },
+      //Obrim el login per identificar l'usuari
+          : LoginPage(
+        guardarAjustos: guardarAjustos,
       ),
     );
   }

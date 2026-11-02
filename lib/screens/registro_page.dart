@@ -1,6 +1,8 @@
+
 import 'package:flutter/material.dart';
 import '../widgets/campo_texto_app.dart';
 import '../widgets/boton_principal.dart';
+import '../services/usuarios_service.dart';
 
 class RegistroPage extends StatefulWidget {
   const RegistroPage({super.key});
@@ -11,31 +13,92 @@ class RegistroPage extends StatefulWidget {
 
 class _RegistroPageState extends State<RegistroPage> {
 
-  //Obtenir les dades introduïdes
+  //Obtenim les dades que introdueix l'usuari
   final TextEditingController usuarioController = TextEditingController();
+  final TextEditingController nombreController = TextEditingController();
+  final TextEditingController apellidosController = TextEditingController();
   final TextEditingController correoController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController objetivoController = TextEditingController();
 
   String mensajeError = '';
+  bool registrando = false;
 
-  //Comprovem
-  void registrarUsuario() {
+  //Comprovem les dades i registrem l'usuari a la base de dades
+  Future<void> registrarUsuario() async {
+
+    //Comprovem que tots els camps estiguin omplerts
     if (usuarioController.text.trim().isEmpty ||
+        nombreController.text.trim().isEmpty ||
+        apellidosController.text.trim().isEmpty ||
         correoController.text.trim().isEmpty ||
-        passwordController.text.isEmpty) {
+        passwordController.text.isEmpty ||
+        objetivoController.text.trim().isEmpty) {
       setState(() {
         mensajeError = 'Has d\'omplir tots els camps';
       });
       return;
     }
 
-    final DateTime fechaCreacion = DateTime.now(); //Generem data automaticament
+    //Convertim l'objectiu a un numero
+    int? objetivo = int.tryParse(objetivoController.text.trim());
+
+    //Comprovem que l'objectiu sigui correcte
+    if (objetivo == null || objetivo <= 0) {
+      setState(() {
+        mensajeError = 'L\'objectiu ha de ser un número més gran que 0';
+      });
+      return;
+    }
+
+    //Evitem registrar dues vegades mentre es guarden les dades
+    if (registrando) return;
 
     setState(() {
-      mensajeError = 'Falta connectar el servei de registre';
+      registrando = true;
+      mensajeError = '';
     });
+
+    try {
+      //Guardem l'usuari i el seu objectiu a la base de dades
+      await UsuariosService.registrarUsuari(
+        usuarioController.text.trim(),
+        nombreController.text.trim(),
+        apellidosController.text.trim(),
+        correoController.text.trim(),
+        passwordController.text,
+        objetivo,
+      );
+
+      if (!mounted) return;
+
+      //Mostrem un missatge quan el registre s'ha fet correctament
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Usuari registrat correctament'),
+        ),
+      );
+
+      //Tornem al login per iniciar sessio
+      Navigator.pop(context);
+
+    } catch (e) {
+      if (!mounted) return;
+
+      //Mostrem un error si no s'ha pogut registrar
+      setState(() {
+        mensajeError = 'No s\'ha pogut registrar l\'usuari';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          registrando = false;
+        });
+      }
+    }
   }
 
+  //Tornem a la pantalla de login
   void volverLogin() {
     Navigator.pop(context);
   }
@@ -43,8 +106,11 @@ class _RegistroPageState extends State<RegistroPage> {
   @override
   void dispose() {
     usuarioController.dispose();
+    nombreController.dispose();
+    apellidosController.dispose();
     correoController.dispose();
     passwordController.dispose();
+    objetivoController.dispose();
     super.dispose();
   }
 
@@ -78,15 +144,36 @@ class _RegistroPageState extends State<RegistroPage> {
                   controlador: usuarioController,
                 ),
 
+                //Camp del nom
+                CampoTextoApp(
+                  etiqueta: 'Nom',
+                  controlador: nombreController,
+                ),
+
+                //Camp dels cognoms
+                CampoTextoApp(
+                  etiqueta: 'Cognoms',
+                  controlador: apellidosController,
+                ),
+
+                //Camp del correu electronic
                 CampoTextoApp(
                   etiqueta: 'Correu electrònic',
                   controlador: correoController,
                 ),
 
+                //Camp de la contrasenya
                 CampoTextoApp(
                   etiqueta: 'Contrasenya',
                   controlador: passwordController,
                   ocultar: true,
+                ),
+
+                //Camp per indicar quants habits vol completar cada dia
+                CampoTextoApp(
+                  etiqueta: 'Objectiu diari d\'hàbits',
+                  controlador: objetivoController,
+                  tipusTeclat: TextInputType.number,
                 ),
 
                 //Mostrem els errors del registre
@@ -98,13 +185,13 @@ class _RegistroPageState extends State<RegistroPage> {
 
                 const SizedBox(height: 10),
 
-                //Botó per registrar l'usuari
+                //Boto per registrar l'usuari
                 BotonPrincipal(
-                  texto: 'Registrar-se',
+                  texto: registrando ? 'Registrant...' : 'Registrar-se',
                   accion: registrarUsuario,
                 ),
 
-                //Tornem a l'inici de sessió
+                //Tornem a l'inici de sessio
                 TextButton(
                   onPressed: volverLogin,
                   child: const Text('Ja tens compte? Inicia sessió'),
