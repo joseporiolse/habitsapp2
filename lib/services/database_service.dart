@@ -6,7 +6,6 @@ class DatabaseService {
   //Guardem la base de dades per no crear una nova connexio cada vegada
   static Database? _database;
 
-  //Funcio per obtenir la base de dades
   static Future<Database> obtenirDatabase() async {
 
     //Si ja tenim la base de dades la retornem
@@ -48,7 +47,6 @@ class DatabaseService {
           )
         ''');
 
-        //Creem la taula habitos per guardar els habits de cada usuari
         await db.execute('''
           CREATE TABLE habitos (
             id_habit INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +61,6 @@ class DatabaseService {
           )
         ''');
 
-        //Creem la taula estadisticas per guardar les dades de cada habit
         await db.execute('''
           CREATE TABLE estadisticas (
             id_estadistica INTEGER PRIMARY KEY AUTOINCREMENT,

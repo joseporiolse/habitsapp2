@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-//Rebem els ajustos actuals i la funció per guardar els canvis.
 class ConfiguracioScreen extends StatefulWidget {
   final bool temaFosc;
   final double midaLletra;
@@ -19,8 +18,6 @@ class ConfiguracioScreen extends StatefulWidget {
   State<ConfiguracioScreen> createState() =>
       _ConfiguracioScreenState();
 }
-
-//Variables
 
 class _ConfiguracioScreenState extends State<ConfiguracioScreen> {
   late bool temaFosc;
@@ -64,14 +61,13 @@ class _ConfiguracioScreenState extends State<ConfiguracioScreen> {
               setState(() {
                 temaFosc = valor;
               });
-
               actualitzarAjustos();
             },
           ),
 
           const Divider(),
 
-          // Control per modificar la mida de la lletra i les icones
+          //Control per modificar la mida de la lletra i els iconos
           const Text(
             'Mida de la lletra i les icones',
             style: TextStyle(
@@ -82,7 +78,7 @@ class _ConfiguracioScreenState extends State<ConfiguracioScreen> {
 
           const SizedBox(height: 10),
 
-          //Ajustem la mida de la lletra i els iconos
+          //Ajustem la mida
           Slider(
             value: midaLletra,
             min: 0.8, //80%
@@ -93,7 +89,6 @@ class _ConfiguracioScreenState extends State<ConfiguracioScreen> {
               setState(() {
                 midaLletra = valor;
               });
-
               actualitzarAjustos();
             },
           ),
@@ -116,7 +111,6 @@ class _ConfiguracioScreenState extends State<ConfiguracioScreen> {
               setState(() {
                 ocultarCompletats = valor;
               });
-
               actualitzarAjustos();
             },
           ),

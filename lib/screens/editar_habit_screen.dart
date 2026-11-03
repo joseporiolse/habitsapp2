@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../widgets/campo_texto_app.dart';
 import '../widgets/boton_principal.dart';
 
-//Dades que retornem a la pantalla principal quan guardem un hàbit
 class ResultatEdicioHabit {
   final String nom;
   final int color;
@@ -13,7 +12,7 @@ class ResultatEdicioHabit {
   });
 }
 
-class EditarHabitScreen extends StatefulWidget { //Rebem el nom i el color inicials, i indiquem si estem creant un hàbit nou
+class EditarHabitScreen extends StatefulWidget { //Rebem el nom i el color inicials i indiquem si estem creant un hàbit nou
   final String nomInicial;
   final int colorInicial;
   final bool esNou;
@@ -39,7 +38,7 @@ class _EditarHabitScreenState extends State<EditarHabitScreen> {
     Colors.orange,
   ];
 
-  //Carreguem el nom i el color actuals perquè es puguin modificar
+  //Carreguem el nom i el color actuals per a modificar
   @override
   void initState() {
     super.initState();

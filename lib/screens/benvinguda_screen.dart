@@ -3,17 +3,13 @@ import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'registro_page.dart';
 
-//Pantalla de benvinguda de l'aplicacio
 class Benvinguda extends StatelessWidget {
-
   //Rebem les preferencies visuals de l'aplicacio
   final bool temaFosc;
   final double midaLletra;
   final bool ocultarCompletats;
-
-  //Funcio que rebem de main.dart per guardar els ajustos
+  //Funcio que rebem de main per guardar els ajustos
   final Future<void> Function(bool, double, bool) guardarAjustos;
-
   const Benvinguda({
     super.key,
     this.temaFosc = false,
@@ -22,7 +18,6 @@ class Benvinguda extends StatelessWidget {
     required this.guardarAjustos,
   });
 
-  //Obrim la pantalla per iniciar sessio
   void obrirLogin(BuildContext context) {
     Navigator.push(
       context,
@@ -60,7 +55,6 @@ class Benvinguda extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
 
-                //Titol principal de l'aplicacio
                 const Text(
                   'Benvingut a Habit App, on els teus hàbits sumen punts',
                   textAlign: TextAlign.center,
@@ -72,7 +66,7 @@ class Benvinguda extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-                //Expliquem breument l'aplicacio
+                //Expliquem breument l'app
                 const Text(
                   'Organitza els teus hàbits, completa els teus objectius '
                       'diaris i consulta el teu progrés.',
@@ -101,7 +95,6 @@ class Benvinguda extends StatelessWidget {
                   },
                   child: const Text('Crear un compte'),
                 ),
-
               ],
             ),
           ),

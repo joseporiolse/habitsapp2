@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../models/habitos.dart';
 import '../services/preferencies_service.dart';
@@ -32,7 +31,6 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
   //Guardem les estadistiques de cada habit
   Map<int, Map<String, Object?>> estadistiquesHabits = {};
 
-  //Carreguem les estadistiques quan obrim la pantalla
   @override
   void initState() {
     super.initState();
@@ -42,11 +40,9 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
   //Recuperem les estadistiques de l'usuari i dels seus habits
   Future<void> carregarEstadistiques() async {
 
-    //Obtenim les apertures d'aquest usuari
     final totalApertures =
     await preferencies.obtenirApertures(widget.idUsuari);
 
-    //Obtenim la seva ultima entrada
     final ultimaData =
     await preferencies.obtenirUltimaObertura(widget.idUsuari);
 
@@ -67,7 +63,6 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
 
     if (!mounted) return;
 
-    //Actualitzem les dades de la pantalla
     setState(() {
       apertures = totalApertures;
       ultimaObertura = ultimaData;
@@ -153,21 +148,16 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
 
           const SizedBox(height: 15),
 
-          //Missatge quan no hi ha habits
           if (widget.habits.isEmpty)
             const Text('Encara no tens hàbits creats.'),
 
-          //Mostrem les estadistiques de cada habit
           ...widget.habits.map((habit) {
 
-            //Recuperem les dades de SQLite
             final dades = estadistiquesHabits[habit.id];
 
-            //Obtenim la ratxa actual
             final int ratxa =
                 dades?['racha_actual'] as int? ?? 0;
 
-            //Obtenim el total de dies completats
             final int dies =
                 dades?['total_dias'] as int? ?? 0;
 
@@ -185,7 +175,7 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
 
                     const SizedBox(height: 8),
 
-                    //Mostrem la ratxa actual de SQLite
+                    //Mostrem la ratxa actual
                     DatoEstadistica(
                       etiqueta: 'Ratxa actual',
                       valor: '$ratxa dies',
@@ -193,7 +183,7 @@ class _EstadistiquesScreenState extends State<EstadistiquesScreen> {
                       color: Colors.orange,
                     ),
 
-                    //Mostrem els dies completats de SQLite
+                    //Mostrem els dies completats
                     DatoEstadistica(
                       etiqueta: 'Total de dies completats',
                       valor: '$dies',

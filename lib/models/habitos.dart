@@ -11,9 +11,7 @@ class Habit { //Representem un hàbit amb el seu id, nom, color i dies completat
     required this.datesCompletades,
   });
 
-  Map<String, dynamic> toJson() {
-    //Convertim l'hàbit a un mapa per poder guardar-lo com a JSON
-
+  Map<String, dynamic> toJson() { //Convertim l'hàbit a un mapa per poder guardar-lo com a JSON
     return {
       'id': id,
       'nom': nom,

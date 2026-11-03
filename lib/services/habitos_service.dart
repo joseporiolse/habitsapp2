@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'database_service.dart';
@@ -62,7 +61,6 @@ class HabitosService {
     };
   }
 
-  //Creem o actualitzem les estadistiques d'un habit
   static Future<void> _actualitzarEstadistiques(
       Transaction txn,
       int idHabit,
@@ -102,13 +100,12 @@ class HabitosService {
     }
   }
 
-  //Recuperem les estadistiques que faltin sense modificar les existents
+  //Recuperem les estadistiques que faltin
   static Future<void> sincronitzarEstadistiques() async {
     final db = await DatabaseService.obtenirDatabase();
 
     await db.transaction((txn) async {
 
-      //Obtenim tots els habits guardats
       final habits = await txn.query('habitos');
 
       for (final habit in habits) {
@@ -182,7 +179,7 @@ class HabitosService {
 
     return db.transaction((txn) async {
 
-      //Guardem l'habit a SQLite
+      //Guardem l'habit
       final idHabit = await txn.insert(
         'habitos',
         {
@@ -251,7 +248,6 @@ class HabitosService {
         whereArgs: [idHabit],
       );
 
-      //Eliminem l'habit
       return txn.delete(
         'habitos',
         where: 'id_habit = ? AND id_usuario = ?',
@@ -286,7 +282,6 @@ class HabitosService {
 
       final ara = DateTime.now();
 
-      //Comprovem si ja esta completat avui
       final completatAvui = dates.any((text) {
         final dia = DateTime.parse(text).toLocal();
 
@@ -301,7 +296,7 @@ class HabitosService {
       //Afegim la data actual
       dates.add(ara.toIso8601String());
 
-      //Guardem les dates actualitzades a SQLite
+      //Guardem les dates actualitzades
       await txn.update(
         'habitos',
         {
@@ -331,7 +326,6 @@ class HabitosService {
 
     return db.transaction((txn) async {
 
-      //Busquem l'habit de l'usuari
       final resultat = await txn.query(
         'habitos',
         where: 'id_habit = ? AND id_usuario = ?',
@@ -341,7 +335,6 @@ class HabitosService {
 
       if (resultat.isEmpty) return false;
 
-      //Recuperem les dates completades
       final dates = _llegirDates(
         resultat.first['fechas_completadas'],
       );
@@ -373,7 +366,6 @@ class HabitosService {
         whereArgs: [idHabit, idUsuari],
       );
 
-      //Recalculem les estadistiques segons les dates reals
       await _actualitzarEstadistiques(
         txn,
         idHabit,

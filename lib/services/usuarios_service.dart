@@ -3,7 +3,6 @@ import 'database_service.dart';
 
 class UsuariosService {
 
-  //Registrem un usuari amb el seu objectiu diari
   static Future<int> registrarUsuari(
       String usuari,
       String nom,
@@ -68,7 +67,6 @@ class UsuariosService {
     return resultat.first;
   }
 
-  //Busquem un usuari pel seu identificador
   static Future<Map<String, Object?>?> obtenirUsuariPerId(
       int idUsuari,
       ) async {
@@ -131,7 +129,6 @@ class UsuariosService {
     );
   }
 
-  //Modifiquem l'objectiu diari de l'usuari
   static Future<int> editarObjetivo(
       int idUsuari,
       int objetivo,
@@ -154,7 +151,6 @@ class UsuariosService {
     );
   }
 
-  //Obtenim l'objectiu diari d'un usuari
   static Future<int> obtenirObjetivo(int idUsuari) async {
     final usuari = await obtenirUsuariPerId(idUsuari);
 

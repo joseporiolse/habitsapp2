@@ -18,12 +18,10 @@ class HomeScreen extends StatefulWidget {
   final int idUsuari;
   final String rol;
 
-  //Configuracio visual de l'aplicacio
   final bool temaFosc;
   final double midaLletra;
   final bool ocultarCompletats;
 
-  //Funcio que rebem de main.dart per guardar els ajustos
   final Future<void> Function(bool, double, bool) guardarAjustos;
 
   final String? nomInicial;
@@ -55,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool carregant = true;
   bool ocultarCompletats = false;
 
-  //Els habits es recuperen de SQLite
+  //Recuperem habits
   List<Habit> habits = [];
 
   @override
@@ -79,11 +77,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  //Convertim les dades de SQLite en objectes Habit
+  //Convertim les dades en objectes Habit
   Habit convertirHabit(Map<String, Object?> dades) {
     List<String> dates = [];
 
-    //Les dates es guarden en format JSON a SQLite
     final valorDates = dades['fechas_completadas'];
 
     if (valorDates is String && valorDates.isNotEmpty) {
@@ -103,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  //Carreguem les dades de l'usuari des de SQLite
+  //Carreguem les dades de l'usuari
   Future<void> carregarDades() async {
     if (mounted) {
       setState(() {
@@ -185,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }).length;
   }
 
-  //Marquem o desmarquem un habit a SQLite
+  //Marquem o desmarquem un habit
   Future<void> canviarEstatHabit(
       Habit habit,
       bool completat,
@@ -249,14 +246,13 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
 
-      //Actualitzem la llista de la pantalla
       await carregarDades();
     } catch (error) {
       mostrarMissatge('Error en guardar l\'hàbit');
     }
   }
 
-  //Eliminem un habit de SQLite
+  //Eliminem un habit
   Future<void> eliminarHabit(Habit habit) async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -295,7 +291,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
       //Actualitzem la llista
       await carregarDades();
-
       mostrarMissatge('Hàbit eliminat correctament');
     } catch (error) {
       mostrarMissatge('Error en eliminar l\'hàbit');
@@ -320,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
           midaLletra: midaActual,
           ocultarCompletats: ocultarActual,
 
-          //Enviem els canvis a MyApp per actualitzar tota l'aplicacio
+          //Enviem els canvis per actualitzar tota l'aplicacio
           guardarAjustos: (tema, mida, ocultar) async {
             await widget.guardarAjustos(
               tema,
@@ -353,7 +348,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (!mounted) return;
-
     if (!esAdmin) {
       mostrarMissatge('No tens permisos d\'administrador');
       return;
@@ -368,13 +362,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
-    //Actualitzem els habits en tornar del panell
+    //Actualitzem els habits
     if (mounted) {
       await carregarDades();
     }
   }
 
-  //Restablim tota l'aplicacio com si fos nova
+  //Restablim tota l'aplicacio
   Future<void> reiniciarApp() async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -408,13 +402,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmar != true || !mounted) return;
 
     try {
-      //Restablim el tema, la lletra i els habits visibles
       await widget.guardarAjustos(false, 1, false);
-
-      //Eliminem totes les preferencies i estadistiques d'apertures
       await preferencies.esborrarTotalDades();
-
-      //Eliminem tots els usuaris, habits i estadistiques de SQLite
       await DatabaseService.restablirBaseDades();
 
       if (!mounted) return;
@@ -477,7 +466,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: obrirAdministracio,
             ),
 
-          //Obrim les estadistiques
           IconButton(
             icon: const Icon(Icons.bar_chart),
             tooltip: 'Estadístiques',
@@ -494,21 +482,18 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
 
-          //Obrim la configuracio
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Configuració',
             onPressed: obrirConfiguracio,
           ),
 
-          //Restablim la configuracio
           IconButton(
             icon: const Icon(Icons.restart_alt),
             tooltip: 'Restablir configuració',
             onPressed: reiniciarApp,
           ),
 
-          //Tanquem la sessio
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Tancar sessió',

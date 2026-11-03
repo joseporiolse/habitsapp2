@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../widgets/campo_texto_app.dart';
 import '../widgets/boton_principal.dart';
@@ -9,7 +8,6 @@ import 'home_screen.dart';
 
 class LoginPage extends StatefulWidget {
 
-  //Funció que rebem de main.dart per actualitzar els ajustos
   final Future<void> Function(bool, double, bool) guardarAjustos;
 
   const LoginPage({
@@ -52,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
 
-      //Busquem l'usuari a la base de dades SQLite
+      //Busquem l'usuari a la base de dades
       final usuari = await UsuariosService.iniciarSessio(
         usuarioController.text.trim(),
         passwordController.text,
@@ -153,7 +151,6 @@ class _LoginPageState extends State<LoginPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 20),
 
                 //Camp per introduir l'usuari
@@ -162,7 +159,6 @@ class _LoginPageState extends State<LoginPage> {
                   controlador: usuarioController,
                 ),
 
-                //Camp per introduir la contrasenya
                 CampoTextoApp(
                   etiqueta: 'Contrasenya',
                   controlador: passwordController,
@@ -193,7 +189,6 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: abrirRegistro,
                   child: const Text('Crear un compte'),
                 ),
-
               ],
             ),
           ),

@@ -59,7 +59,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
       await EstadisticasService.obtenirTotesEstadistiques();
 
       if (!mounted) return;
-
       setState(() {
         autoritzat = true;
         carregant = false;
@@ -90,12 +89,11 @@ class _AdministracionPageState extends State<AdministracionPage> {
       throw Exception('Rol no valid');
     }
 
-    //Comprovem els permisos abans de modificar la base de dades
+    //Comprovem els permisos abans de modificar la BD
     final esAdmin = await UsuariosService.esAdministrador(
       widget.idAdministrador,
     );
     if (!esAdmin) throw Exception('Acces denegat');
-
     final db = await DatabaseService.obtenirDatabase();
     await db.update(
       'usuarios',
@@ -125,18 +123,20 @@ class _AdministracionPageState extends State<AdministracionPage> {
     final objectiu = TextEditingController(
       text: usuari?['objetivo_diario']?.toString() ?? '3',
     );
-
     String rolSeleccionat = usuari?['rol'] == 'administrador'
         ? 'administrador'
         : 'usuario';
 
-    //El formulari retorna les dades; el guardat es fa fora del dialeg
+
+    //Obrim el formulari i esperem les dades que introdueix l'usuari
     final dades = await showDialog<Map<String, Object>>(
       context: context,
       builder: (dialogContext) {
+        //Permet actualitzar les dades del formulari sense tancar-lo
         return StatefulBuilder(
           builder: (context, actualitzarDialeg) {
             return AlertDialog(
+              //Comprovem si estem creant o editant un usuari
               title: Text(usuari == null ? 'Crear usuari' : 'Editar usuari'),
               content: SingleChildScrollView(
                 child: Column(
@@ -160,7 +160,7 @@ class _AdministracionPageState extends State<AdministracionPage> {
                         labelText: 'Correu electronic',
                       ),
                     ),
-                    //En crear es obligatoria; en editar es opcional.
+                    //La contrasenya es obligatoria al crear i opcional al editar
                     TextField(
                       controller: contrasena,
                       obscureText: true,
@@ -177,7 +177,7 @@ class _AdministracionPageState extends State<AdministracionPage> {
                         labelText: 'Objectiu diari',
                       ),
                     ),
-                    //L'administrador pot canviar el rol de qualsevol usuari
+                    //L'administrador pot seleccionar el rol de l'usuari
                     DropdownButtonFormField<String>(
                       value: rolSeleccionat,
                       decoration: const InputDecoration(labelText: 'Rol'),
@@ -191,6 +191,7 @@ class _AdministracionPageState extends State<AdministracionPage> {
                           child: Text('Administrador'),
                         ),
                       ],
+                      //Guardem el rol seleccionat i actualitzem el formulari
                       onChanged: (valor) {
                         if (valor != null) {
                           actualitzarDialeg(() {
@@ -301,7 +302,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
           );
         }
       }
-
       await carregarDades();
       mostrarMissatge('Usuari guardat correctament');
     } catch (error) {
@@ -312,19 +312,15 @@ class _AdministracionPageState extends State<AdministracionPage> {
   //Eliminem un usuari despres de confirmar
   Future<void> eliminarUsuari(int id) async {
     bool? confirmar = await confirmarEliminacio();
-
     if (confirmar != true) return;
-
     if (id == widget.idAdministrador) {
       mostrarMissatge('No pots eliminar el teu propi compte');
       return;
     }
-
     try {
       if (!await UsuariosService.esAdministrador(
         widget.idAdministrador,
       )) return;
-
       await UsuariosService.eliminarUsuari(id);
       await carregarDades();
       mostrarMissatge('Usuari eliminat');
@@ -332,14 +328,12 @@ class _AdministracionPageState extends State<AdministracionPage> {
       mostrarMissatge('Error en eliminar l\'usuari');
     }
   }
-
   //Mostrem la darrera data i hora registrada de l'habit
   String obtenirDataHoraHabit(Map<String, Object?> habit) {
     final valor = habit['fechas_completadas'];
     if (valor == null || valor.toString().isEmpty) {
       return 'Encara no s\'ha completat';
     }
-
     try {
       final dates = jsonDecode(valor.toString()) as List<dynamic>;
       if (dates.isEmpty) return 'Encara no s\'ha completat';
@@ -366,7 +360,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
       return 'Data no disponible';
     }
   }
-
   //Creem o editem un habit de qualsevol usuari
   Future<void> formulariHabit([
     Map<String, Object?>? habit,
@@ -375,18 +368,15 @@ class _AdministracionPageState extends State<AdministracionPage> {
       mostrarMissatge('Primer has de crear un usuari');
       return;
     }
-
     final nom = TextEditingController(
       text: habit?['nombre']?.toString() ?? '',
     );
-
-    //Seleccionem el propietari a partir dels usuaris de SQLite.
+    //Seleccionem el usuari a partir dels usuaris de SQLite.
     int? idUsuariSeleccionat = habit?['id_usuario'] as int?;
     final idsDisponibles = usuaris.map((u) => u['id_usuario'] as int).toList();
     if (!idsDisponibles.contains(idUsuariSeleccionat)) {
       idUsuariSeleccionat = idsDisponibles.first;
     }
-
     final colorsDisponibles = <String, int>{
       'Blau': Colors.blue.toARGB32(),
       'Verd': Colors.green.toARGB32(),
@@ -396,9 +386,7 @@ class _AdministracionPageState extends State<AdministracionPage> {
     if (!colorsDisponibles.containsValue(colorSeleccionat)) {
       colorsDisponibles['Color actual'] = colorSeleccionat;
     }
-
     bool guardat = false;
-
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -425,8 +413,10 @@ class _AdministracionPageState extends State<AdministracionPage> {
                       final nomUsuari = usuari['usuario']?.toString() ?? '';
                       return DropdownMenuItem<int>(
                         value: id,
-                        child: Text('$nomUsuari (ID: $id)',
-                            overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          nomUsuari,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
                     }).toList(),
                     onChanged: (valor) {
@@ -518,7 +508,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
         );
       },
     );
-
     await Future<void>.delayed(const Duration(milliseconds: 350));
     nom.dispose();
     if (guardat && mounted) {
@@ -526,7 +515,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
       mostrarMissatge('Hàbit guardat correctament');
     }
   }
-
   //Marquem o desmarquem habits de qualsevol usuari.
   Future<void> canviarEstatHabitAdmin(Map<String, Object?> habit) async {
     try {
@@ -557,23 +545,18 @@ class _AdministracionPageState extends State<AdministracionPage> {
       mostrarMissatge('Error en actualitzar l\'hàbit');
     }
   }
-
   //Eliminem un habit
   Future<void> eliminarHabit(Map<String, Object?> habit) async {
     bool? confirmar = await confirmarEliminacio();
-
     if (confirmar != true) return;
-
     try {
       if (!await UsuariosService.esAdministrador(
         widget.idAdministrador,
       )) return;
-
       await HabitosService.eliminarHabit(
         habit['id_habit'] as int,
         habit['id_usuario'] as int,
       );
-
       await carregarDades();
       mostrarMissatge('Hàbit eliminat');
     } catch (e) {
@@ -594,9 +577,7 @@ class _AdministracionPageState extends State<AdministracionPage> {
     final total = TextEditingController(
       text: estadistica?['total_dias']?.toString() ?? '0',
     );
-
     bool guardat = false;
-
     await showDialog(
       context: context,
       builder: (context) {
@@ -659,7 +640,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
                   if (!await UsuariosService.esAdministrador(
                     widget.idAdministrador,
                   )) return;
-
                   if (estadistica == null) {
                     //Creem les estadistiques de l'habit
                     await EstadisticasService.crearEstadistiques(id);
@@ -671,7 +651,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
                       totalDies,
                     );
                   }
-
                   guardat = true;
                   if (context.mounted) Navigator.pop(context);
                 } catch (e) {
@@ -689,24 +668,19 @@ class _AdministracionPageState extends State<AdministracionPage> {
     idHabit.dispose();
     racha.dispose();
     total.dispose();
-
     if (guardat) {
       await carregarDades();
       mostrarMissatge('Estadístiques guardades');
     }
   }
-
   //Eliminem les estadistiques
   Future<void> eliminarEstadistiques(int idHabit) async {
     bool? confirmar = await confirmarEliminacio();
-
     if (confirmar != true) return;
-
     try {
       if (!await UsuariosService.esAdministrador(
         widget.idAdministrador,
       )) return;
-
       await EstadisticasService.eliminarEstadistiques(idHabit);
       await carregarDades();
       mostrarMissatge('Estadístiques eliminades');
@@ -714,7 +688,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
       mostrarMissatge('Error en eliminar estadístiques');
     }
   }
-
   //Demanem confirmacio abans d'eliminar dades
   Future<bool?> confirmarEliminacio() async {
     return await showDialog<bool>(
@@ -739,18 +712,15 @@ class _AdministracionPageState extends State<AdministracionPage> {
       },
     );
   }
-
   //Mostrem tots els usuaris
   Widget llistaUsuaris() {
     if (usuaris.isEmpty) {
       return const Center(child: Text('No hi ha usuaris'));
     }
-
     return ListView.builder(
       itemCount: usuaris.length,
       itemBuilder: (context, index) {
         final usuari = usuaris[index];
-
         return ListTile(
           leading: const Icon(Icons.person),
           title: Text(usuari['usuario'].toString()),
@@ -780,18 +750,24 @@ class _AdministracionPageState extends State<AdministracionPage> {
       },
     );
   }
-
+  //Busquem el nom de l'usuari pel seu ID
+  String obtenirNomUsuari(int idUsuari) {
+    for (final usuari in usuaris) {
+      if (usuari['id_usuario'] == idUsuari) {
+        return usuari['nombre']?.toString() ?? 'Desconegut';
+      }
+    }
+    return 'Desconegut';
+  }
   //Mostrem tots els habits
   Widget llistaHabits() {
     if (habits.isEmpty) {
       return const Center(child: Text('No hi ha hàbits'));
     }
-
     return ListView.builder(
       itemCount: habits.length,
       itemBuilder: (context, index) {
         final habit = habits[index];
-
         return ListTile(
           leading: Icon(
             Icons.circle,
@@ -800,7 +776,7 @@ class _AdministracionPageState extends State<AdministracionPage> {
           title: Text(habit['nombre'].toString()),
           subtitle: Text(
             'ID hàbit: ${habit['id_habit']}\n'
-                'ID usuari: ${habit['id_usuario']}\n'
+                'Usuari: ${obtenirNomUsuari(habit['id_usuario'] as int)}\n'
                 'Última vegada completat: ${obtenirDataHoraHabit(habit)}',
           ),
           trailing: Row(
@@ -825,7 +801,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
       },
     );
   }
-
   //Busquem el nom de l'habit utilitzant el seu identificador
   String obtenirNomHabit(int idHabit) {
     for (final habit in habits) {
@@ -835,7 +810,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
     }
     return 'Hàbit $idHabit';
   }
-
   //Mostrem totes les estadistiques
   Widget llistaEstadistiques() {
     if (estadistiques.isEmpty) {
@@ -843,12 +817,10 @@ class _AdministracionPageState extends State<AdministracionPage> {
         child: Text('No hi ha estadístiques'),
       );
     }
-
     return ListView.builder(
       itemCount: estadistiques.length,
       itemBuilder: (context, index) {
         final estadistica = estadistiques[index];
-
         return ListTile(
           leading: const Icon(Icons.bar_chart),
           title: Text(
@@ -878,14 +850,12 @@ class _AdministracionPageState extends State<AdministracionPage> {
       },
     );
   }
-
   //Mostrem el contingut de l'apartat seleccionat
   Widget contingutActual() {
     if (apartat == 0) return llistaUsuaris();
     if (apartat == 1) return llistaHabits();
     return llistaEstadistiques();
   }
-
   //Obrim el formulari de l'apartat seleccionat
   void afegirRegistre() {
     if (apartat == 0) {
@@ -896,7 +866,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
       formulariEstadistiques();
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -955,7 +924,6 @@ class _AdministracionPageState extends State<AdministracionPage> {
               ],
             ),
           ),
-
           //Mostrem les dades de l'apartat
           Expanded(
             child: contingutActual(),

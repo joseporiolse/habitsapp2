@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../widgets/campo_texto_app.dart';
 import '../widgets/boton_principal.dart';
@@ -43,7 +42,6 @@ class _RegistroPageState extends State<RegistroPage> {
     //Convertim l'objectiu a un numero
     int? objetivo = int.tryParse(objetivoController.text.trim());
 
-    //Comprovem que l'objectiu sigui correcte
     if (objetivo == null || objetivo <= 0) {
       setState(() {
         mensajeError = 'L\'objectiu ha de ser un número més gran que 0';
@@ -138,38 +136,32 @@ class _RegistroPageState extends State<RegistroPage> {
 
                 const SizedBox(height: 20),
 
-                //Camp del nom d'usuari
                 CampoTextoApp(
                   etiqueta: 'Usuari',
                   controlador: usuarioController,
                 ),
 
-                //Camp del nom
                 CampoTextoApp(
                   etiqueta: 'Nom',
                   controlador: nombreController,
                 ),
 
-                //Camp dels cognoms
                 CampoTextoApp(
                   etiqueta: 'Cognoms',
                   controlador: apellidosController,
                 ),
 
-                //Camp del correu electronic
                 CampoTextoApp(
                   etiqueta: 'Correu electrònic',
                   controlador: correoController,
                 ),
 
-                //Camp de la contrasenya
                 CampoTextoApp(
                   etiqueta: 'Contrasenya',
                   controlador: passwordController,
                   ocultar: true,
                 ),
 
-                //Camp per indicar quants habits vol completar cada dia
                 CampoTextoApp(
                   etiqueta: 'Objectiu diari d\'hàbits',
                   controlador: objetivoController,
@@ -196,7 +188,6 @@ class _RegistroPageState extends State<RegistroPage> {
                   onPressed: volverLogin,
                   child: const Text('Ja tens compte? Inicia sessió'),
                 ),
-
               ],
             ),
           ),
